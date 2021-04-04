@@ -34,6 +34,8 @@ export interface PathItem {
 export interface PathObject {
   get?: PathOperation;
   post?: PathOperation;
+  put?: PathOperation;
+  delete?: PathOperation;
 }
 
 export interface ScopeHandler {
@@ -79,7 +81,7 @@ export interface ContentItem {
   };
 }
 
-export type ParamIn = "query" | "param" | "body";
+export type ParamIn = "query" | "params" | "body";
 
 export interface Parameter {
   in: ParamIn;
@@ -93,9 +95,14 @@ export type ParamType = "integer" | "string" | "object";
 
 export interface ParamSchema {
   type: ParamType;
+  description?: string;
   format?: string;
   minimum?: number;
+  minLength?: number;
+  maxLength?: number;
+  enum?: number[] | string[];
   properties?: {
     [p: string]: ParamSchema;
   };
+  additionalProperties?: boolean
 }

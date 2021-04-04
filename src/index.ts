@@ -1,2 +1,2 @@
-export * as Aejo from './lib'
-export * as OpenAPI from './types/open-api-3'
+export * from './lib'
+export * from './types/open-api-3'

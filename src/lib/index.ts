@@ -8,8 +8,9 @@ import express, {
 } from "express";
 import * as OpenAPI3 from "../types/open-api-3";
 // import { JsonObject } from "swagger-ui-express";
-import Ajv, { SchemaObject } from "ajv";
+import Ajv, { SchemaObject, ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
+import { ValidationError } from "./errors";
 
 const ajv = new Ajv();
 addFormats(ajv);
@@ -32,7 +33,9 @@ export const Paths = (
 ): OpenAPI3.PathItem =>
   ctrls.reduce((acc, c) => {
     const paths = c(app);
-    Object.keys(paths).forEach((path) => (acc[path] = paths[path]));
+    paths.forEach((p) => (acc = { ...acc, ...p }));
+    // console.log('paths', Object.keys(paths), paths)
+    //Object.keys(paths).forEach((path) => (acc[Object.keys(paths[path])[0]] = paths[path]));
     return acc;
   }, {});
 
@@ -61,10 +64,10 @@ export const ScopeWrapper = (
 };
 
 export interface Security<S = string> {
-  name: string
-  handler: RequestHandler
-  scopes: OpenAPI3.NamedHandler<S>
-  responses: OpenAPI3.MediaSchemaItem
+  name: string;
+  handler: RequestHandler;
+  scopes: OpenAPI3.NamedHandler<S>;
+  responses: OpenAPI3.MediaSchemaItem;
 }
 
 export const Scope = <T = string>(
@@ -161,9 +164,12 @@ export const AsyncMethod = (
 
 export const Get = Method("get");
 export const Post = Method("post");
+export const Put = Method("put");
 
 export const AsyncGet = AsyncMethod("get", AsyncWrapper);
 export const AsyncPost = AsyncMethod("post", AsyncWrapper);
+export const AsyncPut = AsyncMethod("put", AsyncWrapper);
+export const AsyncDelete = AsyncMethod("delete", AsyncWrapper);
 
 export const Param = (pin: OpenAPI3.ParamIn) => (
   param: Omit<OpenAPI3.Parameter, "in">
@@ -173,6 +179,7 @@ export const Param = (pin: OpenAPI3.ParamIn) => (
 });
 
 export const Query = Param("query");
+export const Body = Param("body");
 
 export const Integer = (
   sch: Partial<OpenAPI3.ParamSchema>
@@ -190,22 +197,50 @@ export const validateParams = (
       if (s.required) {
         acc.required.push(s.name);
       }
+      if (typeof s.schema.additionalProperties === "boolean") {
+        acc.additionalProperties = s.schema.additionalProperties;
+      }
       return acc;
     },
-    { type: "object", properties: {}, required: [] }
+    { type: "object", properties: {}, required: [] } as OpenAPI3.ParamSchema
   );
+
+const groupByParamIn = (params: OpenAPI3.Parameter[]) =>
+  params.reduce((group, p) => {
+    if (!group[p.in]) {
+      group[p.in] = [];
+    }
+    group[p.in].push(p);
+    return group;
+  }, {} as { [key in OpenAPI3.ParamIn]: OpenAPI3.Parameter[] });
+
+type ValidateByParam = { [key in OpenAPI3.ParamIn]: ValidateFunction<unknown> };
 
 export const validateBuilder = (v: Ajv) => (
   s: OpenAPI3.Parameter[]
 ): ((req: Request, res: Response, next: NextFunction) => void) => {
-  const validator = v.compile(validateParams(s));
+  console.log('WTFFF')
+  const pIns = groupByParamIn(s);
+  const pKeys = Object.keys(pIns);
+  const validators: ValidateByParam = pKeys.reduce((acc, k: OpenAPI3.ParamIn) => {
+    console.log(pIns, k)
+    console.log('schema', validateParams(pIns[k]))
+    acc[k] = v.compile(validateParams(pIns[k]));
+    return acc;
+  }, {} as ValidateByParam);
+
+  console.log('validators', JSON.stringify(validators))
+  // const validators: ValidateFunction<unknown>[] = pIns.map(validateParams)
+  //const validator = v.compile(validateParams(s));
   return (req: Request, _res: Response, next: NextFunction) => {
-    if (!validator(req[s[0].in])) {
-      throw new Error(JSON.stringify(validator.errors[0]));
-      //next(new Error(JSON.stringify(validator.errors[0])));
-    } else {
-      next();
-    }
+    console.log('pIns', pIns)
+    console.log("validate handler!!!!!", JSON.stringify(s, null, 2));
+    pKeys.forEach((k) => {
+      if (validators[k](req[k])) {
+        throw new ValidationError("AejoValidationError", validators[k].errors);
+      }
+    });
+    next();
   };
 };
 
@@ -223,5 +258,5 @@ export default {
   validate,
   validateParams,
   validateBuilder,
- // docPath,
+  // docPath,
 };
