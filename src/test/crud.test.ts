@@ -332,7 +332,7 @@ test("Validate", (done) => {
           }),
         ],
         middleware: [
-          (_req: Request, res: Response, next: NextFunction) => {
+          (req: Request, res: Response, next: NextFunction) => {
             res.status(200).json({ foo: "bar" });
             next();
           },

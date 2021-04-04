@@ -9,8 +9,8 @@
     "express": "^4.17.1"
   },
   "scripts": {
-    "test": "jest",
-    "build": "yarn tsc --declaration"
+    "build": "yarn tsc --declaration",
+    "test": "yarn build && jest"
   },
   "files": [
     "dist/index.js"

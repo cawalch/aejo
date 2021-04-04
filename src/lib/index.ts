@@ -34,8 +34,6 @@ export const Paths = (
   ctrls.reduce((acc, c) => {
     const paths = c(app);
     paths.forEach((p) => (acc = { ...acc, ...p }));
-    // console.log('paths', Object.keys(paths), paths)
-    //Object.keys(paths).forEach((path) => (acc[Object.keys(paths[path])[0]] = paths[path]));
     return acc;
   }, {});
 
@@ -219,24 +217,18 @@ type ValidateByParam = { [key in OpenAPI3.ParamIn]: ValidateFunction<unknown> };
 export const validateBuilder = (v: Ajv) => (
   s: OpenAPI3.Parameter[]
 ): ((req: Request, res: Response, next: NextFunction) => void) => {
-  console.log('WTFFF')
   const pIns = groupByParamIn(s);
   const pKeys = Object.keys(pIns);
-  const validators: ValidateByParam = pKeys.reduce((acc, k: OpenAPI3.ParamIn) => {
-    console.log(pIns, k)
-    console.log('schema', validateParams(pIns[k]))
-    acc[k] = v.compile(validateParams(pIns[k]));
-    return acc;
-  }, {} as ValidateByParam);
-
-  console.log('validators', JSON.stringify(validators))
-  // const validators: ValidateFunction<unknown>[] = pIns.map(validateParams)
-  //const validator = v.compile(validateParams(s));
+  const validators: ValidateByParam = pKeys.reduce(
+    (acc, k: OpenAPI3.ParamIn) => {
+      acc[k] = v.compile(validateParams(pIns[k]));
+      return acc;
+    },
+    {} as ValidateByParam
+  );
   return (req: Request, _res: Response, next: NextFunction) => {
-    console.log('pIns', pIns)
-    console.log("validate handler!!!!!", JSON.stringify(s, null, 2));
     pKeys.forEach((k) => {
-      if (validators[k](req[k])) {
+      if (!validators[k](req[k])) {
         throw new ValidationError("AejoValidationError", validators[k].errors);
       }
     });
