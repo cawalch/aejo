@@ -57,7 +57,7 @@ Controller({
               res: Response,
               next: NextFunction
             ) => {
-              cons users = await UserService(req.query)
+              const users = await UserService(req.query)
               res.status(200).send(users)
             }
           ],
