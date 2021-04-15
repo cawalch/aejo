@@ -332,7 +332,7 @@ test("Validate", (done) => {
           }),
         ],
         middleware: [
-          (req: Request, res: Response, next: NextFunction) => {
+          (_req: Request, res: Response, next: NextFunction) => {
             res.status(200).json({ foo: "bar" });
             next();
           },
@@ -342,7 +342,7 @@ test("Validate", (done) => {
   );
 
   app.use("/test", router);
-  app.use((err, _req, res, _next) => {
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     res.status(400).send({ err: err.message });
   });
 
