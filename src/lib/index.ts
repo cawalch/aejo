@@ -12,7 +12,7 @@ import Ajv, { SchemaObject, ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
 import { ValidationError } from "./errors";
 
-const ajv = new Ajv();
+export const ajv = new Ajv();
 addFormats(ajv);
 
 export type AppRoute = { paths: OpenAPI3.PathItem[]; router: Router };
