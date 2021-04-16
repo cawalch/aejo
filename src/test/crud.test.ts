@@ -303,7 +303,6 @@ test("Paths", (done) => {
         ),
     })
   );
-  console.log(api)
   expect(Object.keys(api['/api/foo/']).length).toBeGreaterThan(0)
   request(app)
     .get("/api/foo/")
