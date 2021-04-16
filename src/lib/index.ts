@@ -37,13 +37,19 @@ export const Paths = (
     return acc;
   }, {});
 
-export const AsyncWrapper = (cb: RequestHandler) => (
+type AsyncRequestHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+) => Promise<void>;
+
+export const AsyncWrapper = (cb: AsyncRequestHandler) => async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
-    cb(req, res, next);
+    await cb(req, res, next);
   } catch (e) {
     next(e);
   }
@@ -155,7 +161,7 @@ export const Method = (m: string) => (
 
 export const AsyncMethod = (
   m: string,
-  wrapper: (cb: RequestHandler) => RequestHandler
+  wrapper: (cb: AsyncRequestHandler) => AsyncRequestHandler
 ) => (pop: OpenAPI3.PathOperation): OpenAPI3.PathObject => ({
   [m]: { wrapper, ...pop },
 });
