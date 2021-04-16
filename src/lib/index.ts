@@ -24,6 +24,12 @@ export const Controller = (ctrl: { prefix: string; route: typeof Route }) => (
 ): OpenAPI3.PathItem[] => {
   const paths = ctrl.route(express.Router());
   app.use(ctrl.prefix, paths.router);
+  paths.paths.forEach(p => {
+    Object.keys(p).forEach(k => {
+      p[`${ctrl.prefix}${k}`] = p[k]
+      delete p[k]
+    })
+  })
   return paths.paths;
 };
 
