@@ -280,7 +280,7 @@ test("Router Security", (done) => {
 
 test("Paths", (done) => {
   const app = express();
-  Paths(
+  const api = Paths(
     app,
     Controller({
       prefix: "/api/foo",
@@ -303,6 +303,8 @@ test("Paths", (done) => {
         ),
     })
   );
+  console.log(api)
+  expect(Object.keys(api['/api/foo/']).length).toBeGreaterThan(0)
   request(app)
     .get("/api/foo/")
     .expect("Content-Type", /json/)
