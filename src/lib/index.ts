@@ -145,7 +145,8 @@ const mapRouter = (
   }
 
   if (p.pathOp.parameters) {
-    middle.push(wrapper(validate(p.pathOp.parameters)));
+    const { handler } = validate(p.pathOp.parameters)
+    middle.push(wrapper(handler));
   }
 
   middle.push(p.pathOp.middleware.map(wrapper));
@@ -204,18 +205,12 @@ export const validateParams = (
   p.reduce<SchemaObject>(
     (acc, s) => {
       acc.properties[s.name] = { ...s.schema };
-      if (s.required) {
-        acc.required.push(s.name);
-      }
-      if (typeof s.schema.additionalProperties === "boolean") {
-        acc.additionalProperties = s.schema.additionalProperties;
-      }
       return acc;
     },
-    { type: "object", properties: {}, required: [] } as OpenAPI3.ParamSchema
+    { type: "object", properties: {} } as OpenAPI3.ParamSchema
   );
 
-const groupByParamIn = (params: OpenAPI3.Parameter[]) =>
+export const groupByParamIn = (params: OpenAPI3.Parameter[]) =>
   params.reduce((group, p) => {
     if (!group[p.in]) {
       group[p.in] = [];
@@ -228,24 +223,33 @@ type ValidateByParam = { [key in OpenAPI3.ParamIn]: ValidateFunction<unknown> };
 
 export const validateBuilder = (v: Ajv) => (
   s: OpenAPI3.Parameter[]
-): ((req: Request, res: Response, next: NextFunction) => void) => {
+): {
+  handler: ((req: Request, res: Response, next: NextFunction) => void),
+  schema: { [p: string]: SchemaObject },
+} => {
   const pIns = groupByParamIn(s);
+  const ret: { [p: string]: SchemaObject } = {}
   const pKeys = Object.keys(pIns);
   const validators: ValidateByParam = pKeys.reduce(
     (acc, k: OpenAPI3.ParamIn) => {
-      acc[k] = v.compile(validateParams(pIns[k]));
+      const schema = validateParams(pIns[k])
+      acc[k] = v.compile(schema);
+      ret[k] = schema
       return acc;
     },
     {} as ValidateByParam
   );
-  return (req: Request, _res: Response, next: NextFunction) => {
+  return {
+    handler: (req: Request, _res: Response, next: NextFunction) => {
     pKeys.forEach((k) => {
       if (!validators[k](req[k])) {
         throw new ValidationError("AejoValidationError", validators[k].errors);
       }
     });
     next();
-  };
+  },
+  schema: ret,
+  }
 };
 
 export const validate = validateBuilder(ajv);
