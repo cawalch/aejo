@@ -9,6 +9,7 @@ import express, {
 } from "express";
 import {
   Query,
+  Body,
   Get,
   Post,
   Path,
@@ -63,6 +64,39 @@ test("Query", () => {
     },
   });
 });
+
+test("Body", () => {
+  expect(
+    Body({
+      name: "record",
+      description: "max number",
+      schema: {
+        type: "object",
+        properties: {
+          name: {
+            type: "string"
+          },
+        },
+        required: ['name'],
+        additionalProperties: false,
+      },
+    })
+  ).toEqual({
+    name: "record",
+    in: "body",
+    description: "max number",
+    schema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+        },
+      },
+      required: ['name'],
+      additionalProperties: false
+    },
+  });
+})
 
 test("Get", () => {
   expect(

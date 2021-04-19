@@ -101,6 +101,7 @@ export interface ParamSchema {
   minLength?: number;
   maxLength?: number;
   nullable?: boolean;
+  required?: string[];
   enum?: number[] | string[];
   properties?: {
     [p: string]: ParamSchema;
