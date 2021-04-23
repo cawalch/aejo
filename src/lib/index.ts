@@ -205,9 +205,13 @@ export const validateParams = (
   p.reduce<SchemaObject>(
     (acc, s) => {
       acc.properties[s.name] = { ...s.schema };
+      // base-level requirements
+      if (s.required === true) {
+        acc.required.push(s.name)
+      }
       return acc;
     },
-    { type: "object", properties: {} } as OpenAPI3.ParamSchema
+    { type: "object", properties: {}, required: [] } as OpenAPI3.ParamSchema
   );
 
 export const groupByParamIn = (params: OpenAPI3.Parameter[]) =>
