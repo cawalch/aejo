@@ -49,6 +49,7 @@ test("Query", () => {
     Query({
       name: "limit",
       description: "max number",
+      required: true,
       schema: {
         type: "integer",
         minimum: 1,
@@ -58,6 +59,7 @@ test("Query", () => {
     name: "limit",
     in: "query",
     description: "max number",
+    required: true,
     schema: {
       type: "integer",
       minimum: 1,
