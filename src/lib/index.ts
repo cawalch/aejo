@@ -74,7 +74,7 @@ export const ScopeWrapper = (
 
 export interface Security<S = string> {
   name: string
-  before: RequestHandler,
+  before?: RequestHandler,
   handler: RequestHandler
   scopes: OpenAPI3.NamedHandler<S>
   responses: OpenAPI3.MediaSchemaItem
