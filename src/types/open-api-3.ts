@@ -57,6 +57,7 @@ export interface PathOperation {
   tags?: string[];
   operationId?: string;
   summary?: string;
+  requestBody?: MediaSchema;
   description?: string;
   responses?: MediaSchemaItem;
   scope?: ScopeObject[];
@@ -72,6 +73,7 @@ export interface MediaSchemaItem {
 
 export interface MediaSchema {
   description: string;
+  required?: true,
   content?: ContentItem;
 }
 
@@ -81,7 +83,7 @@ export interface ContentItem {
   };
 }
 
-export type ParamIn = "query" | "params" | "body";
+export type ParamIn = "query" | "path" | "body";
 
 export interface Parameter {
   in: ParamIn;
