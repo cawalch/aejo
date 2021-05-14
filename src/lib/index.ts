@@ -74,6 +74,7 @@ export const ScopeWrapper = (
 
 export interface Security<S = string> {
   name: string
+  before: RequestHandler,
   handler: RequestHandler
   scopes: OpenAPI3.NamedHandler<S>
   responses: OpenAPI3.MediaSchemaItem
@@ -86,6 +87,7 @@ export const Scope = <T = string>(
   auth: security.name,
   scopes,
   middleware: [
+    ... security.before ? [security.before] : [],
     ScopeWrapper(
       security.handler,
       scopes.map((s) => security.scopes[s as string])
