@@ -101,9 +101,10 @@ export const AuthPathOp = (scope: OpenAPI3.ScopeObject) => (
 ): OpenAPI3.PathObject => {
   const [m] = Object.keys(pop)
   const ret: OpenAPI3.PathOperation = pop[m]
-  ret.security = {
-    [scope.auth]: scope.scopes,
-  }
+
+  ret.security = [
+    { [scope.auth]: scope.scopes }
+  ]
   ret.scope = [scope]
   ret.responses = { ...ret.responses, ...scope.responses }
   return { [m]: ret }

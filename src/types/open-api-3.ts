@@ -51,7 +51,7 @@ export type ScopeObject<S = string> = {
 
 export type SecurityObject = {
   [auth: string]: string[];
-};
+}[];
 
 export interface PathOperation {
   tags?: string[];
