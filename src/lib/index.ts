@@ -74,6 +74,7 @@ export const ScopeWrapper = (
 
 export interface Security<S = string> {
   name: string
+  before?: RequestHandler,
   handler: RequestHandler
   scopes: OpenAPI3.NamedHandler<S>
   responses: OpenAPI3.MediaSchemaItem
@@ -86,6 +87,7 @@ export const Scope = <T = string>(
   auth: security.name,
   scopes,
   middleware: [
+    ... security.before ? [security.before] : [],
     ScopeWrapper(
       security.handler,
       scopes.map((s) => security.scopes[s as string])
@@ -99,9 +101,10 @@ export const AuthPathOp = (scope: OpenAPI3.ScopeObject) => (
 ): OpenAPI3.PathObject => {
   const [m] = Object.keys(pop)
   const ret: OpenAPI3.PathOperation = pop[m]
-  ret.security = {
-    [scope.auth]: scope.scopes,
-  }
+
+  ret.security = [
+    { [scope.auth]: scope.scopes }
+  ]
   ret.scope = [scope]
   ret.responses = { ...ret.responses, ...scope.responses }
   return { [m]: ret }

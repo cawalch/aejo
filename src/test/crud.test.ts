@@ -203,9 +203,9 @@ test('Security Schema', () => {
       },
     })
   )
-  expect(actual.get.security).toMatchObject({
-    auth: ['admin'],
-  })
+  expect(actual.get.security).toMatchObject([
+    { auth: ['admin'] }
+  ])
   expect(actual.get.responses).toMatchObject({
     '400': {
       description: 'Not auth',
