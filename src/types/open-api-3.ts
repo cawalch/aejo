@@ -91,6 +91,13 @@ export interface Parameter {
   description?: string;
   required?: boolean;
   schema: ParamSchema;
+  deprecated?: boolean
+  examples?: {
+    [ex: string]: {
+      value: any
+      summary?: string
+    }
+  }
 }
 
 export type ParamType = "integer" | "string" | "array" | "object" | "boolean";
