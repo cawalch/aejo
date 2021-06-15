@@ -122,4 +122,6 @@ export interface ParamSchema {
   };
   additionalProperties?: boolean;
   items?: ParamSchema;
+  pattern?: string;
+  uniqueItems?: boolean;
 }
