@@ -107,6 +107,9 @@ export interface ParamSchema {
   description?: string;
   format?: string;
   minimum?: number;
+  maximum?: number;
+  example?: any;
+  default?: any;
   minLength?: number;
   maxLength?: number;
   minItems?: number;
