@@ -1,6 +1,6 @@
 # Example App
 
-A basic app demostrating how to build an API using AEJO
+A basic app demonstrating how to build an API using AEJO
 
 ## Running
 
