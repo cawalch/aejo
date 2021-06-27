@@ -13,6 +13,7 @@ yarn example
 - List Logs
 
     http://localhost:3000/api/logs
+
     http://localhost:3000/api/logs?limit=10
 
 - Swagger UI
