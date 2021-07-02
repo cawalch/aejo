@@ -411,7 +411,17 @@ test('Validate requestBody', (done) => {
                   name: {
                     type: 'string',
                   },
+                  meta: {
+                    type: 'string',
+                  },
+                  tags: {
+                    type: 'string',
+                  },
                 },
+                oneOf: [
+                  { required: ['meta'] },
+                  { required: ['tags'] },
+                ]
               },
             },
           },
@@ -433,7 +443,7 @@ test('Validate requestBody', (done) => {
 
   request(app)
     .post('/test')
-    .send({ name: 'foo' })
+    .send({ name: 'foo', meta: 'bar' })
     .end((_err, res) => {
       expect(res.status).toBe(200)
       done()
