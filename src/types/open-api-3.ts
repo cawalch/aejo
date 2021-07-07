@@ -100,7 +100,7 @@ export interface Parameter {
   }
 }
 
-export type ParamType = "integer" | "string" | "array" | "object" | "boolean";
+export type ParamType = "integer" | "number" | "string" | "array" | "object" | "boolean";
 
 export interface ParamSchema {
   type?: ParamType;
