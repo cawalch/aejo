@@ -165,8 +165,6 @@ const mapRouter = (
 
   middle.push(p.pathOp.middleware.map(wrapper))
   urtr[p.method](p.path, middle)
-  // cleanup
-  delete p.pathOp.middleware
 }
 
 export const Path = (
