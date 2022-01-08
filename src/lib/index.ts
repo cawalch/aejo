@@ -18,19 +18,19 @@ export type AppRoute = { paths: OpenAPI3.PathItem[]; router: Router }
 
 export const App = (a: OpenAPI3.AppObject): OpenAPI3.AppObject => a
 
-export const Controller = (ctrl: { prefix: string; route: typeof Route }) => (
-  app: Express
-): OpenAPI3.PathItem[] => {
-  const paths = ctrl.route(express.Router())
-  app.use(ctrl.prefix, paths.router)
-  paths.paths.forEach((p) => {
-    Object.keys(p).forEach((k) => {
-      p[`${ctrl.prefix}${k}`] = p[k]
-      delete p[k]
+export const Controller =
+  (ctrl: { prefix: string; route: typeof Route }) =>
+  (app: Express): OpenAPI3.PathItem[] => {
+    const paths = ctrl.route(express.Router())
+    app.use(ctrl.prefix, paths.router)
+    paths.paths.forEach((p) => {
+      Object.keys(p).forEach((k) => {
+        p[`${ctrl.prefix}${k}`.replace(/\(.*\)/g, '')] = p[k]
+        delete p[k]
+      })
     })
-  })
-  return paths.paths
-}
+    return paths.paths
+  }
 
 export const Paths = (
   app: Express,
@@ -48,33 +48,30 @@ type AsyncRequestHandler = (
   next: NextFunction
 ) => Promise<void>
 
-export const AsyncWrapper = (cb: AsyncRequestHandler) => async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    await cb(req, res, next)
-  } catch (e) {
-    next(e)
+export const AsyncWrapper =
+  (cb: AsyncRequestHandler) =>
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await cb(req, res, next)
+    } catch (e) {
+      next(e)
+    }
   }
-}
 
-export const ScopeWrapper = (
-  cb: RequestHandler,
-  scopes: OpenAPI3.ScopeHandler[]
-) => (req: Request, res: Response, next: NextFunction): void => {
-  if (scopes.some((v) => v(req, res, next))) {
-    next()
-    return
-  } else {
-    cb(req, res, next)
+export const ScopeWrapper =
+  (cb: RequestHandler, scopes: OpenAPI3.ScopeHandler[]) =>
+  (req: Request, res: Response, next: NextFunction): void => {
+    if (scopes.some((v) => v(req, res, next))) {
+      next()
+      return
+    } else {
+      cb(req, res, next)
+    }
   }
-}
 
 export interface Security<S = string> {
   name: string
-  before?: RequestHandler,
+  before?: RequestHandler
   handler: RequestHandler
   scopes: OpenAPI3.NamedHandler<S>
   responses: OpenAPI3.MediaSchemaItem
@@ -87,7 +84,7 @@ export const Scope = <T = string>(
   auth: security.name,
   scopes,
   middleware: [
-    ... security.before ? [security.before] : [],
+    ...(security.before ? [security.before] : []),
     ScopeWrapper(
       security.handler,
       scopes.map((s) => security.scopes[s as string])
@@ -96,19 +93,17 @@ export const Scope = <T = string>(
   responses: security.responses,
 })
 
-export const AuthPathOp = (scope: OpenAPI3.ScopeObject) => (
-  pop: OpenAPI3.PathObject
-): OpenAPI3.PathObject => {
-  const [m] = Object.keys(pop)
-  const ret: OpenAPI3.PathOperation = pop[m]
+export const AuthPathOp =
+  (scope: OpenAPI3.ScopeObject) =>
+  (pop: OpenAPI3.PathObject): OpenAPI3.PathObject => {
+    const [m] = Object.keys(pop)
+    const ret: OpenAPI3.PathOperation = pop[m]
 
-  ret.security = [
-    { [scope.auth]: scope.scopes }
-  ]
-  ret.scope = [scope]
-  ret.responses = { ...ret.responses, ...scope.responses }
-  return { [m]: ret }
-}
+    ret.security = [{ [scope.auth]: scope.scopes }]
+    ret.scope = [scope]
+    ret.responses = { ...ret.responses, ...scope.responses }
+    return { [m]: ret }
+  }
 
 export const Route = (
   rtr: Router,
@@ -174,18 +169,17 @@ export const Path = (
   [path]: po.reduce((acc, p) => ({ ...acc, ...p }), {}),
 })
 
-export const Method = (m: string) => (
-  pop: OpenAPI3.PathOperation
-): OpenAPI3.PathObject => ({
-  [m]: pop,
-})
+export const Method =
+  (m: string) =>
+  (pop: OpenAPI3.PathOperation): OpenAPI3.PathObject => ({
+    [m]: pop,
+  })
 
-export const AsyncMethod = (
-  m: string,
-  wrapper: (cb: AsyncRequestHandler) => AsyncRequestHandler
-) => (pop: OpenAPI3.PathOperation): OpenAPI3.PathObject => ({
-  [m]: { wrapper, ...pop },
-})
+export const AsyncMethod =
+  (m: string, wrapper: (cb: AsyncRequestHandler) => AsyncRequestHandler) =>
+  (pop: OpenAPI3.PathOperation): OpenAPI3.PathObject => ({
+    [m]: { wrapper, ...pop },
+  })
 
 export const Get = Method('get')
 export const Post = Method('post')
@@ -196,12 +190,12 @@ export const AsyncPost = AsyncMethod('post', AsyncWrapper)
 export const AsyncPut = AsyncMethod('put', AsyncWrapper)
 export const AsyncDelete = AsyncMethod('delete', AsyncWrapper)
 
-export const Param = (pin: OpenAPI3.ParamIn) => (
-  param: Omit<OpenAPI3.Parameter, 'in'>
-): OpenAPI3.Parameter => ({
-  in: pin,
-  ...param,
-})
+export const Param =
+  (pin: OpenAPI3.ParamIn) =>
+  (param: Omit<OpenAPI3.Parameter, 'in'>): OpenAPI3.Parameter => ({
+    in: pin,
+    ...param,
+  })
 
 export const QueryParam = Param('query')
 export const PathParam = Param('path')
@@ -242,41 +236,42 @@ export const groupByParamIn = (params: OpenAPI3.Parameter[]) =>
 
 type ValidateByParam = { [key in OpenAPI3.ParamIn]: ValidateFunction<unknown> }
 
-export const validateBuilder = (v: Ajv) => (
-  s: OpenAPI3.Parameter[]
-): {
-  handlers: ((req: Request, res: Response, next: NextFunction) => void)[]
-  schema: { [p: string]: SchemaObject }
-} => {
-  const pIns = groupByParamIn(s)
-  const ret: { [p: string]: SchemaObject } = {}
-  const pKeys = Object.keys(pIns)
-  const validators: ValidateByParam = pKeys.reduce(
-    (acc, k: OpenAPI3.ParamIn) => {
-      const schema = validateParams(pIns[k])
-      acc[k] = v.compile(schema)
-      ret[k] = schema
-      return acc
-    },
-    {} as ValidateByParam
-  )
-  return {
-    handlers: pKeys.map((k) =>
-      validateHandler(validators[k], k as OpenAPI3.ParamIn)
-    ),
-    schema: ret,
+export const validateBuilder =
+  (v: Ajv) =>
+  (
+    s: OpenAPI3.Parameter[]
+  ): {
+    handlers: ((req: Request, res: Response, next: NextFunction) => void)[]
+    schema: { [p: string]: SchemaObject }
+  } => {
+    const pIns = groupByParamIn(s)
+    const ret: { [p: string]: SchemaObject } = {}
+    const pKeys = Object.keys(pIns)
+    const validators: ValidateByParam = pKeys.reduce(
+      (acc, k: OpenAPI3.ParamIn) => {
+        const schema = validateParams(pIns[k])
+        acc[k] = v.compile(schema)
+        ret[k] = schema
+        return acc
+      },
+      {} as ValidateByParam
+    )
+    return {
+      handlers: pKeys.map((k) =>
+        validateHandler(validators[k], k as OpenAPI3.ParamIn)
+      ),
+      schema: ret,
+    }
   }
-}
 
-const validateHandler = (
-  valid: ValidateFunction,
-  whereIn: OpenAPI3.ParamIn
-) => (req: Request, _res: Response, next: NextFunction) => {
-  if (!valid(req[whereIn])) {
-    throw new ValidationError('AejoValidationError', valid.errors)
+const validateHandler =
+  (valid: ValidateFunction, whereIn: OpenAPI3.ParamIn) =>
+  (req: Request, _res: Response, next: NextFunction) => {
+    if (!valid(req[whereIn])) {
+      throw new ValidationError('AejoValidationError', valid.errors)
+    }
+    next()
   }
-  next()
-}
 
 export const validate = validateBuilder(ajv)
 
