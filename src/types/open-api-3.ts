@@ -94,7 +94,7 @@ export interface Parameter {
   deprecated?: boolean
   examples?: {
     [ex: string]: {
-      value: any
+      value: unknown
       summary?: string
     }
   }
@@ -108,8 +108,8 @@ export interface ParamSchema {
   format?: string;
   minimum?: number;
   maximum?: number;
-  example?: any;
-  default?: any;
+  example?: unknown;
+  default?: unknown;
   minLength?: number;
   maxLength?: number;
   minItems?: number;
