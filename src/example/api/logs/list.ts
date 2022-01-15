@@ -5,7 +5,7 @@ import { Schema } from './schema'
 
 // example data access method
 const getLogs = (limit: number) => {
-    let logs = []
+    const logs = []
     for (let i = 0; i < limit; i += 1) {
         logs.push({ type: 'info', message: `log message ${i}` })
     }
