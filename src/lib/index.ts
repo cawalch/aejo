@@ -62,7 +62,7 @@ export const Controller =
     app.use(ctrl.prefix, paths.router)
     paths.paths.forEach((p) => {
       Object.keys(p).forEach((k) => {
-        p[`${ctrl.prefix}${k}`.replace(/\(.*\)/g, '')] = p[k]
+        p[`${ctrl.prefix}${k}`.replace(/\(.*?\)/g, '')] = p[k]
         delete p[k]
       })
     })
