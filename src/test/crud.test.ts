@@ -387,6 +387,42 @@ test('Path Pattern', (done) => {
     })
 })
 
+test('Nested Path Pattern', (done) => {
+  const app = express()
+  const api = Paths(
+    app,
+    Controller({
+      prefix: '/api/foo',
+      route: (router: Router): AppRoute =>
+        Route(
+          router,
+          Path(
+            '/:id(\\d+)/values/:id(\\d+)',
+            Get({
+              tags: ['feeds'],
+              description: 'List Feeds',
+              middleware: [
+                (_req: Request, res: Response, next: NextFunction) => {
+                  res.status(200).json({ foo: 'bar' })
+                  next()
+                },
+              ],
+            })
+          )
+        ),
+    })
+  )
+  expect(Object.keys(api['/api/foo/:id/values/:id']).length).toBeGreaterThan(0)
+  request(app)
+    .get('/api/foo/55/values/27')
+    .expect(200)
+    .end(function (err, res) {
+      if (err) throw err
+      expect(res.body).toEqual({ foo: 'bar' })
+      done()
+    })
+  })
+
 test('Validate', (done) => {
   const app = express()
   const { router } = Route(
