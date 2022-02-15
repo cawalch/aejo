@@ -381,7 +381,6 @@ export const Param =
     ...param,
   })
 
-
 /**
  * QueryParam
  *
@@ -503,17 +502,67 @@ const validateHandler =
 
 export const validate = validateBuilder(ajv)
 
-/*
-export const docPath = (doc: JsonObject) => (
-  paths: OpenAPI3.PathObject
-): void => {
-  Object.keys(paths).forEach((p) => (doc[p] = paths[p]));
-};
-*/
+type AONumberType = 'integer' | 'int32' | 'int8' | 'number'
+
+export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
+  type: AONumberType
+}
+  ? number
+  : S extends {
+      type: 'boolean'
+    }
+  ? boolean
+  : S extends {
+      type: 'string'
+    }
+  ? string
+  : S extends {
+      type: 'timestamp'
+    }
+  ? string | Date
+  : S extends {
+    type: 'array'
+    items: { type: string }
+  } ? AOTDataDef<S['items'], D>[]
+  : S extends {
+      enum: readonly (infer E)[]
+    }
+  ? string extends E
+    ? never
+    : [E] extends [string]
+    ? E
+    : never
+  : S extends {
+      elements: infer E
+    }
+  ? AOTDataDef<E, D>[]
+  : S extends {
+      properties: Record<string, unknown>
+      required?: readonly string[]
+      additionalProperties?: boolean
+    }
+  ? {
+      -readonly [K in keyof S['properties'] as S['required'][number] extends K
+        ? never
+        : K]?: AOTDataDef<S['properties'][K], D>
+    } & {
+      -readonly [K in S['required'][number]]: AOTDataDef<S['properties'][K], D>
+    } & ([S['additionalProperties']] extends [true]
+        ? Record<string, unknown>
+        : unknown)
+  : S extends {
+      name: string
+      schema: Record<string, unknown>
+    }
+  ? {
+      -readonly [K in S['name']]: AOTDataDef<S['schema'], D>
+    }
+  : null
+
+export type AODataType<S> = AOTDataDef<S, Record<string, never>>
 
 export default {
   validate,
   validateParams,
   validateBuilder,
-  // docPath,
 }
