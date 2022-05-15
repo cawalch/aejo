@@ -103,7 +103,7 @@ export interface Parameter {
 export type ParamType = "integer" | "number" | "string" | "array" | "object" | "boolean";
 
 export interface ParamSchema {
-  type?: ParamType;
+  type?: ParamType
   description?: string;
   format?: string;
   minimum?: number;
@@ -118,7 +118,7 @@ export interface ParamSchema {
   minProperties?: number;
   nullable?: boolean;
   required?: readonly string[];
-  enum?: number[] | string[];
+  enum?: Readonly<number[] | string[]>;
   properties?: {
     [p: string]: ParamSchema;
   };

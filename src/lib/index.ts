@@ -430,7 +430,7 @@ export const PathParam = Param('path')
 export const Integer = (
   sch: Partial<OpenAPI3.ParamSchema>
 ): OpenAPI3.ParamSchema => ({
-  type: 'integer' as OpenAPI3.ParamType,
+  type: 'integer',
   ...sch,
 })
 
@@ -505,18 +505,16 @@ export const validate = validateBuilder(ajv)
 type AONumberType = 'integer' | 'int32' | 'int8' | 'number'
 
 export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
+  // if number
   type: AONumberType
 }
   ? number
+  // else if boolean
   : S extends {
       type: 'boolean'
     }
   ? boolean
-  : S extends {
-      type: 'string'
-    }
-  ? string
-  : S extends {
+    : S extends {
       type: 'timestamp'
     }
   ? string | Date
@@ -525,6 +523,7 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
     items: { type: string }
   } ? AOTDataDef<S['items'], D>[]
   : S extends {
+      type: 'string'
       enum: readonly (infer E)[]
     }
   ? string extends E
@@ -537,14 +536,16 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
     }
   ? AOTDataDef<E, D>[]
   : S extends {
+      type: 'string'
+    }
+  ? string
+  : S extends {
       properties: Record<string, unknown>
       required?: readonly string[]
       additionalProperties?: boolean
     }
   ? {
-      -readonly [K in keyof S['properties'] as S['required'][number] extends K
-        ? never
-        : K]?: AOTDataDef<S['properties'][K], D>
+      -readonly [K in keyof S['properties']]?: AOTDataDef<S['properties'][K], D>
     } & {
       -readonly [K in S['required'][number]]: AOTDataDef<S['properties'][K], D>
     } & ([S['additionalProperties']] extends [true]
@@ -557,6 +558,15 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
   ? {
       -readonly [K in S['name']]: AOTDataDef<S['schema'], D>
     }
+  : S extends {
+    description: string
+    schema: Record<string, unknown>
+  }
+  ? AODataType<S['schema']>
+  // else if object
+    : S extends {
+      type: 'object'
+    } ? Record<string, unknown>
   : null
 
 export type AODataType<S> = AOTDataDef<S, Record<string, never>>
