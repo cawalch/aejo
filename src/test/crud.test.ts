@@ -376,7 +376,7 @@ test('Path Pattern', (done) => {
         ),
     })
   )
-  expect(Object.keys(api['/api/foo/:id']).length).toBeGreaterThan(0)
+  expect(Object.keys(api['/api/foo/{id}']).length).toBeGreaterThan(0)
   request(app)
     .get('/api/foo/55')
     .expect(200)
@@ -397,7 +397,7 @@ test('Nested Path Pattern', (done) => {
         Route(
           router,
           Path(
-            '/:id(\\d+)/values/:id(\\d+)',
+            '/:feedId(\\d+)/values/:valueId(\\d+)',
             Get({
               tags: ['feeds'],
               description: 'List Feeds',
@@ -412,7 +412,7 @@ test('Nested Path Pattern', (done) => {
         ),
     })
   )
-  expect(Object.keys(api['/api/foo/:id/values/:id']).length).toBeGreaterThan(0)
+  expect(Object.keys(api['/api/foo/{feedId}/values/{valueId}']).length).toBeGreaterThan(0)
   request(app)
     .get('/api/foo/55/values/27')
     .expect(200)

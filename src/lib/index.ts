@@ -62,7 +62,13 @@ export const Controller =
     app.use(ctrl.prefix, paths.router)
     paths.paths.forEach((p) => {
       Object.keys(p).forEach((k) => {
-        p[`${ctrl.prefix}${k}`.replace(/\(.*?\)/g, '')] = p[k]
+        /*
+         * replace express.js path parameters with OpenAPI3 formatted strings
+         * :id -> {id}
+         * :id(<pattern>) - {id}
+         **/
+        const pathKey = `${ctrl.prefix}${k}`.replace(/\(.*?\)/g, '').replace(/:(\w+)/g, '{$1}')
+        p[pathKey] = p[k]
         delete p[k]
       })
     })
