@@ -20,8 +20,22 @@
   ],
   "repository": {
     "type": "git",
-    "url": "github.com/cawalch/aejo"
+    "url": "git://github.com/cawalch/aejo.git"
   },
+  "bugs": {
+    "url": "https://github.com/calwalch/aejo/issues"
+  },
+  "keywords": [
+    "ajv",
+    "api",
+    "express",
+    "JSON",
+    "oas",
+    "openapi",
+    "schema",
+    "swagger",
+    "validate"
+  ],
   "devDependencies": {
     "@babel/core": "^7.13.15",
     "@babel/preset-env": "^7.13.10",
