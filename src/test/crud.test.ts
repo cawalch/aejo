@@ -35,7 +35,7 @@ interface UserAuth extends Request {
 const UserLevel =
   (minLevel: number): ScopeHandler =>
   (req: UserAuth): boolean =>
-    req.user.level > minLevel
+    (req.user?.level ?? 0) > minLevel
 
 const routeHandler = (_req: Request, _res: Response, _next: NextFunction) => {}
 
@@ -204,8 +204,8 @@ test('Security Schema', () => {
       },
     })
   )
-  expect(actual.get.security).toMatchObject([{ auth: ['admin'] }])
-  expect(actual.get.responses).toMatchObject({
+  expect(actual.get?.security).toMatchObject([{ auth: ['admin'] }])
+  expect(actual.get?.responses).toMatchObject({
     '400': {
       description: 'Not auth',
     },
@@ -222,8 +222,8 @@ test('Multi Scope', (done) => {
       res.status(400).send('Not Auth')
     },
     scopes: {
-      admin: (req: UserAuth) => req.user.level >= 100,
-      transport: (req: UserAuth) => req.user.level >= 50,
+      admin: (req: UserAuth) => (req.user?.level ?? 0) >= 100,
+      transport: (req: UserAuth) => (req.user?.level ?? 0) >= 50,
     },
     responses: {
       '400': {

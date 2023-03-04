@@ -520,10 +520,12 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
       type: 'boolean'
     }
   ? boolean
+  // else if timestamp
     : S extends {
       type: 'timestamp'
     }
   ? string | Date
+  // else if array
   : S extends {
     type: 'array'
     items: { type: string }
@@ -576,6 +578,10 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
   : null
 
 export type AODataType<S> = AOTDataDef<S, Record<string, never>>
+
+export type AOParamDef =
+  Record<string, Record<string, Omit<OpenAPI3.Parameter, 'in' | 'name'>>>
+
 
 export default {
   validate,
