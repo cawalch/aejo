@@ -98,21 +98,24 @@ export const Paths = (
   app: Express,
   ...ctrls: ReturnType<typeof Controller>[]
 ): OpenAPI3.PathItem =>
-  ctrls.reduce((acc, c) => {
-    const paths = c(app)
-    paths.forEach((p) => {
-      const [path] = Object.keys(p)
-      const [method.toUpperCase()] = Object.keys(p[path])
-      const full = `${method} ${path}`
-      if (acc.track.includes(full)) {
-        console.warn(`Warning: Possbile duplicate API definition '${full}'`)
-      } else {
-        acc.track.push(full)
-      }
-      acc.out = { ...acc.out, ...p }
-    })
-    return acc.out
-  }, { out: {}, track: [] as Array<string>})
+  ctrls.reduce(
+    (acc, c) => {
+      const paths = c(app)
+      paths.forEach((p) => {
+        const [path] = Object.keys(p)
+        const [method] = Object.keys(p[path])
+        const full = `${method} ${path}`
+        if (acc.track.includes(full)) {
+          console.warn(`Warning: Possbile duplicate API definition '${full}'`)
+        } else {
+          acc.track.push(full)
+        }
+        acc.out = { ...acc.out, ...p }
+      })
+      return acc.out
+    },
+    { out: {}, track: [] as Array<string> }
+  )
 
 type AsyncRequestHandler = (
   req: Request,

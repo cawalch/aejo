@@ -8,9 +8,5 @@ export default (router: Router): AppRoute =>
         Path(
             '/',
             listRoute
-        ),
-        Path(
-          '/',
-          listRoute
         )
     )
