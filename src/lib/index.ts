@@ -67,7 +67,9 @@ export const Controller =
          * :id -> {id}
          * :id(<pattern>) - {id}
          **/
-        const pathKey = `${ctrl.prefix}${k}`.replace(/\(.*?\)/g, '').replace(/:(\w+)/g, '{$1}')
+        const pathKey = `${ctrl.prefix}${k}`
+          .replace(/\(.*?\)/g, '')
+          .replace(/:(\w+)/g, '{$1}')
         p[pathKey] = p[k]
         delete p[k]
       })
@@ -98,9 +100,19 @@ export const Paths = (
 ): OpenAPI3.PathItem =>
   ctrls.reduce((acc, c) => {
     const paths = c(app)
-    paths.forEach((p) => (acc = { ...acc, ...p }))
-    return acc
-  }, {})
+    paths.forEach((p) => {
+      const [path] = Object.keys(p)
+      const [method.toUpperCase()] = Object.keys(p[path])
+      const full = `${method} ${path}`
+      if (acc.track.includes(full)) {
+        console.warn(`Warning: Possbile duplicate API definition '${full}'`)
+      } else {
+        acc.track.push(full)
+      }
+      acc.out = { ...acc.out, ...p }
+    })
+    return acc.out
+  }, { out: {}, track: [] as Array<string>})
 
 type AsyncRequestHandler = (
   req: Request,
@@ -515,21 +527,22 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
   type: AONumberType
 }
   ? number
-  // else if boolean
-  : S extends {
+  : // else if boolean
+  S extends {
       type: 'boolean'
     }
   ? boolean
-  // else if timestamp
-    : S extends {
+  : // else if timestamp
+  S extends {
       type: 'timestamp'
     }
   ? string | Date
-  // else if array
-  : S extends {
-    type: 'array'
-    items: { type: string }
-  } ? AOTDataDef<S['items'], D>[]
+  : // else if array
+  S extends {
+      type: 'array'
+      items: { type: string }
+    }
+  ? AOTDataDef<S['items'], D>[]
   : S extends {
       type: 'string'
       enum: readonly (infer E)[]
@@ -567,21 +580,23 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
       -readonly [K in S['name']]: AOTDataDef<S['schema'], D>
     }
   : S extends {
-    description: string
-    schema: Record<string, unknown>
-  }
+      description: string
+      schema: Record<string, unknown>
+    }
   ? AODataType<S['schema']>
-  // else if object
-    : S extends {
+  : // else if object
+  S extends {
       type: 'object'
-    } ? Record<string, unknown>
+    }
+  ? Record<string, unknown>
   : null
 
 export type AODataType<S> = AOTDataDef<S, Record<string, never>>
 
-export type AOParamDef =
-  Record<string, Record<string, Omit<OpenAPI3.Parameter, 'in' | 'name'>>>
-
+export type AOParamDef = Record<
+  string,
+  Record<string, Omit<OpenAPI3.Parameter, 'in' | 'name'>>
+>
 
 export default {
   validate,

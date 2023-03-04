@@ -10,7 +10,10 @@ const getLogs = (limit: number, filter: string) => {
   for (let i = 0; i < limit; i += 1) {
     logs.push({ type: 'info', message: `log message ${i}` })
   }
-  return logs.filter((log) => log.split(' ').includes(filter))
+  if (filter) {
+    return logs.filter((log) => log.message.split(' ').includes(filter))
+  }
+  return logs
 }
 
 // Express and AEJO Parameter defintion example
@@ -33,6 +36,7 @@ const ListRequestParams = {
       description: 'filter on value',
       schema: {
         type: 'string',
+        nullable: true
       },
     },
   },
