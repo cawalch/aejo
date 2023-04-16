@@ -14,10 +14,10 @@ A library for building fully documented and validated Express API endpoints
 ```typescript
 // Validate `limit` against `req.query`
 Query({
-  name: "limit",
-  description: "max number",
+  name: 'limit',
+  description: 'max number',
   schema: {
-    type: "integer",
+    type: 'integer',
     minimum: 1,
   },
 })
@@ -28,55 +28,51 @@ Query({
 ```typescript
 // Define a new controller using the `/api/users` path
 Controller({
-  prefix: "/api/users",
+  prefix: '/api/users',
   // DI express router
   route: (router: Router): AppRoute =>
     Route(
       router,
       // Define a new path under the `/api/users` controller
       Path(
-        "/",
+        '/',
         AsyncGet({
-          tags: ["users"],
-          description: "List Users",
+          tags: ['users'],
+          description: 'List Users',
           // Define path parameters
           parameters: [
             Query({
-              name: "limit",
-              description: "max number",
+              name: 'limit',
+              description: 'max number',
               schema: {
-                type: "integer",
+                type: 'integer',
                 minimum: 1,
               },
-            })
+            }),
           ],
           // Middleware handlers
           middleware: [
-            async (
-              req: Request,
-              res: Response,
-              next: NextFunction
-            ) => {
+            async (req: Request, res: Response, next: NextFunction) => {
               const users = await UserService(req.query)
               res.status(200).send(users)
-            }
+            },
           ],
           // Endpoint Responses (testable)
           responses: {
-            "200": {
-              description: "Success",
-              content: UserListResponse
-            }
-          }
+            '200': {
+              description: 'Success',
+              content: UserListResponse,
+            },
+          },
         })
       )
-    )
+    ),
 })
 ```
 
 ## TODO
 
 - [ ] Actual documentation
-- [ ] Publish npm
-- [ ] Better OAS support
-- [ ] More Tests
+- [x] Publish npm
+- [x] Better OAS support
+- [x] More Tests
