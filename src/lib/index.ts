@@ -106,7 +106,7 @@ export const Paths = (
         const [method] = Object.keys(p[path])
         const full = `${method} ${path}`
         if (acc.track.includes(full)) {
-          console.warn(`Warning: Possbile duplicate API definition '${full}'`)
+          console.warn(`possible duplicate API definition '${full}'`)
         } else {
           acc.track.push(full)
         }
