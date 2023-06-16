@@ -337,6 +337,25 @@ test('Paths', (done) => {
             })
           )
         ),
+    }),
+    Controller({
+      prefix: '/api/bar',
+      route: (router: Router): AppRoute =>
+        Route(
+          router,
+          Path(
+            '/',
+            Get({
+              tags: ['bars'],
+              description: 'Bar Feeds',
+              middleware: [
+                (_req: Request, res: Response, next: NextFunction) => {
+                  res.status(200).json({ bar: 'bar' })
+                },
+              ],
+            })
+          )
+        ),
     })
   )
   expect(Object.keys(api['/api/foo/']).length).toBeGreaterThan(0)
@@ -412,7 +431,9 @@ test('Nested Path Pattern', (done) => {
         ),
     })
   )
-  expect(Object.keys(api['/api/foo/{feedId}/values/{valueId}']).length).toBeGreaterThan(0)
+  expect(
+    Object.keys(api['/api/foo/{feedId}/values/{valueId}']).length
+  ).toBeGreaterThan(0)
   request(app)
     .get('/api/foo/55/values/27')
     .expect(200)
@@ -421,7 +442,7 @@ test('Nested Path Pattern', (done) => {
       expect(res.body).toEqual({ foo: 'bar' })
       done()
     })
-  })
+})
 
 test('Validate', (done) => {
   const app = express()
@@ -517,4 +538,3 @@ test('Validate requestBody', (done) => {
       done()
     })
 })
-

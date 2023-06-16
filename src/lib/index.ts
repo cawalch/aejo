@@ -97,8 +97,8 @@ export const Controller =
 export const Paths = (
   app: Express,
   ...ctrls: ReturnType<typeof Controller>[]
-): OpenAPI3.PathItem =>
-  ctrls.reduce(
+): OpenAPI3.PathItem => {
+  const paths = ctrls.reduce(
     (acc, c) => {
       const paths = c(app)
       paths.forEach((p) => {
@@ -112,10 +112,12 @@ export const Paths = (
         }
         acc.out = { ...acc.out, ...p }
       })
-      return acc.out
+      return acc
     },
     { out: {}, track: [] as Array<string> }
   )
+  return paths.out
+}
 
 type AsyncRequestHandler = (
   req: Request,
