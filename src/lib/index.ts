@@ -105,16 +105,16 @@ export const Paths = (
         const [path] = Object.keys(p)
         const [method] = Object.keys(p[path])
         const full = `${method} ${path}`
-        if (acc.track.includes(full)) {
+        if (acc.track.has(full)) {
           console.warn(`possible duplicate API definition '${full}'`)
         } else {
-          acc.track.push(full)
+          acc.track.add(full)
         }
-        acc.out = { ...acc.out, ...p }
+        Object.assign(acc.out, p)
       })
       return acc
     },
-    { out: {}, track: [] as Array<string> }
+    { out: {}, track: new Set<string>() }
   )
   return paths.out
 }
@@ -295,40 +295,46 @@ export const Route = (
 
 const mapRouter = (
   urtr: Router,
-  p: { pathOp: OpenAPI3.PathOperation; path: string; method: string }
+  {
+    pathOp,
+    path,
+    method,
+  }: { pathOp: OpenAPI3.PathOperation; path: string; method: string }
 ) => {
-  const middle = []
-  let wrapper = (cb: RequestHandler) => cb
-  if (p.pathOp.wrapper) {
-    wrapper = p.pathOp.wrapper
+  let wrapper: (cb: RequestHandler) => RequestHandler = (cb) => cb
+  if (pathOp.wrapper) {
+    wrapper = pathOp.wrapper
   }
+
+  const middle: RequestHandler[] = []
 
   // security handler
-  if (p.pathOp.scope) {
-    p.pathOp.scope.forEach((s: OpenAPI3.ScopeObject) => {
-      middle.push(...s.middleware.map(wrapper))
-    })
+  if (pathOp.scope) {
+    for (const s of pathOp.scope) {
+      for (const m of s.middleware) {
+        middle.push(wrapper(m))
+      }
+    }
   }
 
-  // validate 'application/json' POST body
-  if (
-    p.pathOp.requestBody &&
-    p.pathOp.requestBody.content['application/json']
-  ) {
-    const handler = validateHandler(
-      ajv.compile(p.pathOp.requestBody.content['application/json'].schema),
-      'body'
-    )
+  const content = pathOp.requestBody?.content['application/json']
+  if (content) {
+    const handler = validateHandler(ajv.compile(content.schema), 'body')
     middle.push(wrapper(handler))
   }
 
-  if (p.pathOp.parameters) {
-    const { handlers } = validate(p.pathOp.parameters)
-    middle.push(...handlers.map(wrapper))
+  if (pathOp.parameters) {
+    const { handlers } = validate(pathOp.parameters)
+    for (const h of handlers) {
+      middle.push(wrapper(h))
+    }
   }
 
-  middle.push(p.pathOp.middleware.map(wrapper))
-  urtr[p.method](p.path, middle)
+  for (const m of pathOp.middleware) {
+    middle.push(wrapper(m))
+  }
+
+  urtr[method](path, middle)
 }
 
 /**
@@ -496,22 +502,27 @@ export const validateBuilder =
   } => {
     const pIns = groupByParamIn(s)
     const ret: { [p: string]: SchemaObject } = {}
-    const pKeys = Object.keys(pIns)
-    const validators: ValidateByParam = pKeys.reduce(
-      (acc, k: OpenAPI3.ParamIn) => {
-        const schema = validateParams(pIns[k])
-        acc[k] = v.compile(schema)
-        ret[k] = schema
-        return acc
-      },
-      {} as ValidateByParam
-    )
-    return {
-      handlers: pKeys.map((k) =>
-        validateHandler(validators[k], k as OpenAPI3.ParamIn)
-      ),
-      schema: ret,
+    const handlers: ((
+      req: Request,
+      res: Response,
+      next: NextFunction
+    ) => void)[] = []
+
+    const validators: ValidateByParam = {
+      path: undefined,
+      query: undefined,
+      body: undefined,
     }
+
+    for (const k of Object.keys(pIns)) {
+      const schema = validateParams(pIns[k])
+      const validator = v.compile(schema)
+      validators[k] = validator
+      ret[k] = schema
+      handlers.push(validateHandler(validator, k as OpenAPI3.ParamIn))
+    }
+
+    return { handlers, schema: ret }
   }
 
 const validateHandler =
@@ -527,43 +538,25 @@ export const validate = validateBuilder(ajv)
 
 type AONumberType = 'integer' | 'int32' | 'int8' | 'number'
 
-export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
-  // if number
+type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
   type: AONumberType
 }
   ? number
-  : // else if boolean
-  S extends {
-      type: 'boolean'
-    }
+  : S extends { type: 'boolean' }
   ? boolean
-  : // else if timestamp
-  S extends {
-      type: 'timestamp'
-    }
+  : S extends { type: 'timestamp' }
   ? string | Date
-  : // else if array
-  S extends {
-      type: 'array'
-      items: { type: string }
-    }
+  : S extends { type: 'array'; items: { type: string } }
   ? AOTDataDef<S['items'], D>[]
-  : S extends {
-      type: 'string'
-      enum: readonly (infer E)[]
-    }
+  : S extends { type: 'string'; enum: readonly (infer E)[] }
   ? string extends E
     ? never
     : [E] extends [string]
     ? E
     : never
-  : S extends {
-      elements: infer E
-    }
+  : S extends { elements: infer E }
   ? AOTDataDef<E, D>[]
-  : S extends {
-      type: 'string'
-    }
+  : S extends { type: 'string' }
   ? string
   : S extends {
       properties: Record<string, unknown>
@@ -577,22 +570,13 @@ export type AOTDataDef<S, D extends Record<string, unknown>> = S extends {
     } & ([S['additionalProperties']] extends [true]
         ? Record<string, unknown>
         : unknown)
-  : S extends {
-      name: string
-      schema: Record<string, unknown>
-    }
+  : S extends { name: string; schema: Record<string, unknown> }
   ? {
       -readonly [K in S['name']]: AOTDataDef<S['schema'], D>
     }
-  : S extends {
-      description: string
-      schema: Record<string, unknown>
-    }
+  : S extends { description: string; schema: Record<string, unknown> }
   ? AODataType<S['schema']>
-  : // else if object
-  S extends {
-      type: 'object'
-    }
+  : S extends { type: 'object' }
   ? Record<string, unknown>
   : null
 

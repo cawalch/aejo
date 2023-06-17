@@ -36,7 +36,7 @@ const ListRequestParams = {
       description: 'filter on value',
       schema: {
         type: 'string',
-        nullable: true
+        nullable: true,
       },
     },
   },

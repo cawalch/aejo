@@ -102,6 +102,33 @@ test('Path', () => {
   })
 })
 
+test('Duplicate Paths', () => {
+  const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
+  const app = express()
+  const duplicateController = Controller({
+    prefix: '/api/logs',
+    route: (router: Router): AppRoute =>
+      Route(
+        router,
+        Path(
+          '/foo/bar',
+          Get({
+            middleware: [
+              (_req: Request, res: Response, next: NextFunction) => {
+                res.status(200).json({ foo: 'bar' })
+                next()
+              },
+            ],
+          })
+        )
+      ),
+  })
+  Paths(app, duplicateController, duplicateController)
+  expect(consoleWarnSpy).toHaveBeenCalledWith(
+    "possible duplicate API definition 'get /api/logs/foo/bar'"
+  )
+})
+
 test('Get', () => {
   expect(
     Get({
