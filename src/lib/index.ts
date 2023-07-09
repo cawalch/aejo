@@ -60,6 +60,9 @@ export const Controller =
   (app: Express): OpenAPI3.PathItem[] => {
     const paths = ctrl.route(express.Router())
     app.use(ctrl.prefix, paths.router)
+    if (!Array.isArray(paths.paths)) {
+      throw new Error('no controller paths')
+    }
     paths.paths.forEach((p) => {
       Object.keys(p).forEach((k) => {
         /*
